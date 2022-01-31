@@ -11,8 +11,8 @@ print(statusPagina)
 
 sopa = BeautifulSoup(pagina.data, "html.parser")    #parser é uma analisador de sintaxe, serve pra organizar o texto
 
-#print(sopa)    #imprime todo cod da pagina com a organizaçõa parser
-#print(sopa.title)
+#print(sopa)                #imprime todo cod da pagina com a organizaçõa parser
+#print(sopa.title)          #imprime o título com as tags html
 print(sopa.title.string)    #tira as tags, deixa só texto limpo
 
 links = sopa.find_all('a')      # O 'a' é identificação de direcionamento de links na pagina
