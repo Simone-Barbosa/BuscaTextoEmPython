@@ -60,7 +60,7 @@ def crawl(paginas, profundidade):       # adicionado aula 9
         print("nº novas_paginas = ", len(novas_paginas))
 
     print("FIM nº paginas = ", len(paginas))
-    print("FIM nº novas_paginas = ", len(novas_paginas)
+    print("FIM nº novas_paginas = ", len(novas_paginas))
 
 
 #crawl("https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o")      
@@ -69,8 +69,9 @@ def crawl(paginas, profundidade):       # adicionado aula 9
 
 listapaginas = ["https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o"]
 
-crawl(listapaginas, 2)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
+crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
 
+# NOTA: professor falou que profundidade = 2 nos testes dele levou 10h pra processar os dados!
 
 
 
