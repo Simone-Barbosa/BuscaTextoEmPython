@@ -3,6 +3,14 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin        #para corrigir links que não tem https
 
 # -----------------------------AULA 7.Crawler - Busca de Documentos II ---------------------------------
+
+def getTexto(sopa):
+    for tags in sopa(['script','style']):
+        tags.decompose()
+    return ' '.join(sopa.stripped_strings)
+
+    
+
 def crawl(paginas, profundidade):       # adicionado aula 9
     #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)    #desabilitar
     
