@@ -11,5 +11,6 @@ for tags in sopa(['script','style']):       # tags a remover: script e style
 
 conteudo = ' '.join(sopa.stripped_strings)      # esse comando junta o espaço ' ' com cada palavra do texto, do contrario tudo ficaria grudado
 
-print(conteudo)
+print()
+print("O CONTEÚDO DA PÁGINA É: ", conteudo)
 
