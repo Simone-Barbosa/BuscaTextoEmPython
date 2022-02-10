@@ -1,15 +1,59 @@
 import urllib3
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin        #para corrigir links que não tem https
+import re
+import nltk
+import pymysql
 
-# -----------------------------AULA 7.Crawler - Busca de Documentos II ---------------------------------
+def paginaIndexada(url):                # Adicionado aula 16
+    retorno = -1                        # caso não exista a página
+    conexao = pymysql.connect(host='localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice')
+    cursorUrl = conexao.cursor()        # permite comandos do sql aqui dentro
+    cursorUrl.execute('select idurl from urls where url = %s', url)
+    
+    if cursorUrl.rowcount > 0:
+        #print("Url cadastrada")
+        idurl = cursorUrl.fetchone()[0]     #buscar udurl | fetchone pega 1 registro | [0] posição q vou pegar (=id)
+        cursorPalavra = conexao.cursor()
+        cursorPalavra.execute('select idurl from palavra_localizacao where idurl = %s', idurl)
+
+        if cursorPalavra.rowcount > 0:
+            #print("Url com palavras")
+            retorno = -2                    # caso exista a página com palavras cadastradas
+        else:
+            print("Url sem palavras")
+            retorno = idurl                 # caso exista a página sem palavras, então retorna o ID da página
+        cursorPalavra.close()
+    #else:
+        #print("Url não cadastrada")
+
+    cursorUrl.close()
+    conexao.close()
+    return retorno
+    
+t = paginaIndexada('teste')
+
+print("t = ", t)
+
+
+
+def separaPalavras(texto):              # adicionado aula 15
+    stop = nltk.corpus.stopwords.words('portuguese')
+    stemmer = nltk.stem.RSLPStemmer()
+    splitter = re.compile('\\W+')
+    lista_palavras = []
+    lista = [p for p in splitter.split(texto) if p != '']
+    for p in lista:
+        if p.lower() not in stop:
+            if len(p) > 1:
+                lista_palavras.append(stemmer.stem(p).lower())
+    return lista_palavras
+    
 
 def getTexto(sopa):
     for tags in sopa(['script','style']):
         tags.decompose()
-    return ' '.join(sopa.stripped_strings)
-
-    
+    return ' '.join(sopa.stripped_strings)    
 
 def crawl(paginas, profundidade):       # adicionado aula 9
     #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)    #desabilitar
@@ -70,16 +114,15 @@ def crawl(paginas, profundidade):       # adicionado aula 9
     print("FIM nº paginas = ", len(paginas))
     print("FIM nº novas_paginas = ", len(novas_paginas))
 
-
 #crawl("https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o")      
-
-# -----------------------------AULA 8.Crawler - Busca de Documentos III ---------------------------------
 
 listapaginas = ["https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o"]
 
-crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
+#crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
+                            # NOTA: prof.falou que profundidade = 2 nos testes dele levou 10h pra processar os dados!
 
-# NOTA: professor falou que profundidade = 2 nos testes dele levou 10h pra processar os dados!
+#teste = separaPalavras('Este lugar é apavorante')
+#print("teste = ",teste)
 
 
 
