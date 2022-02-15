@@ -5,7 +5,51 @@ import re
 import nltk
 import pymysql
 
-def paginaIndexada(url):                # Adicionado aula 16
+def inserePalavra(palavra):
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True)
+    cursor = conexao.cursor()
+    cursor.execute('insert into palavras (palavra) values (%s)', palavra)
+    idpalavra = cursor.lastrowid
+    
+    cursor.close()
+    conexao.close()
+
+    return idpalavra
+
+#t4 = inserePalavra('teste2')
+#print("Teste função inserePalavra = ", t4)
+
+def palavraIndexada(palavra):       # aula 18
+    retorno = -1    # caso não exista a palavra no índice
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice')
+    cursor = conexao.cursor()
+    cursor.execute('select idpalavra from palavras where palavra = %s', palavra)
+    if cursor.rowcount > 0:
+        #print("Palavra já cadastrada")
+        retorno = cursor.fetchone()[0]      # retorna o id da palavra
+    #else:
+        #print("Palavra não cadastrada")
+
+    cursor.close()
+    conexao.close()
+    return retorno
+
+#t3 = palavraIndexada("Linguage")
+#print("Teste função palavraIndexada = ", t3)
+
+def inserePagina(url):      #aula 17
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True)   # se não colocar autocommit=True ele não guarda/registra nova url
+    cursor = conexao.cursor()
+    cursor.execute('insert into urls (url) values (%s)', url)
+    idpagina = cursor.lastrowid     # Pega o id que acabou de ser inserido na base de dados / Usar lastrowid só quando tem só 1 pessoa usando banco dados, em rede local.
+    cursor.close()
+    conexao.close()
+    return idpagina
+
+#t2 = inserePagina('teste2')
+#print('teste função inserePagina = ', t2)
+
+def paginaIndexada(url):                # Adicionado aula 16, Verifica se já existe a url
     retorno = -1                        # caso não exista a página
     conexao = pymysql.connect(host='localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice')
     cursorUrl = conexao.cursor()        # permite comandos do sql aqui dentro
@@ -31,11 +75,8 @@ def paginaIndexada(url):                # Adicionado aula 16
     conexao.close()
     return retorno
     
-t = paginaIndexada('teste')
-
-print("t = ", t)
-
-
+#t = paginaIndexada('teste')
+#print("t = ", t)
 
 def separaPalavras(texto):              # adicionado aula 15
     stop = nltk.corpus.stopwords.words('portuguese')
