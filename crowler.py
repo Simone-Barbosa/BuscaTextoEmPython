@@ -5,8 +5,22 @@ import re
 import nltk
 import pymysql
 
-def inserePalavra(palavra):
+def inserePalavraLocalizacao(idurl, idpalavra, localizacao):
     conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True)
+    cursor = conexao.cursor()
+    cursor.execute('insert into palavra_localizacao(idurl, idpalavra, localizacao) values (%s, %s, %s)', (idurl, idpalavra, localizacao))
+    idpalavra_localizacao = cursor.lastrowid
+
+    cursor.close()
+    conexao.close()
+
+    return idpalavra_localizacao
+
+#t5 = inserePalavraLocalizacao(1, 2, 50)
+#print("teste func. inserePalavraLocalizacao = ", t5)
+
+def inserePalavra(palavra):     # aula 19
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True, use_unicode = True, charset = 'utf8mb4')  #Aula 22: use_unicode e charset (tratamento texto, pq pag web tem varios tipos carecteres)
     cursor = conexao.cursor()
     cursor.execute('insert into palavras (palavra) values (%s)', palavra)
     idpalavra = cursor.lastrowid
@@ -21,7 +35,7 @@ def inserePalavra(palavra):
 
 def palavraIndexada(palavra):       # aula 18
     retorno = -1    # caso não exista a palavra no índice
-    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice')
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', use_unicode = True, charset = 'utf8mb4')    #Aula 22: use_unicode e charset (tratamento texto, pq pag web tem varios tipos carecteres) 
     cursor = conexao.cursor()
     cursor.execute('select idpalavra from palavras where palavra = %s', palavra)
     if cursor.rowcount > 0:
@@ -96,6 +110,34 @@ def getTexto(sopa):
         tags.decompose()
     return ' '.join(sopa.stripped_strings)    
 
+
+def indexador(url, sopa):
+    indexada = paginaIndexada(url)
+    if indexada == -2:
+        print("Url já cadastrada")
+        return
+    elif indexada == -1:
+        idnova_pagina = inserePagina(url)
+    elif indexada > 0:
+        idnova_pagina = indexada
+    
+    print("Indexado" + url)
+
+    texto = getTexto(sopa)
+    palavras = separaPalavras(texto)
+    
+    for i in range(len(palavras)):
+        palavra = palavras[i]
+        idpalavra = palavraIndexada(palavra)
+
+        if idpalavra == -1:
+            idpalavra = inserePalavra(palavra)
+
+        inserePalavraLocalizacao(idnova_pagina, idpalavra, i)   # i = posição da palavra no documento/pagina
+
+
+
+
 def crawl(paginas, profundidade):       # adicionado aula 9
     #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)    #desabilitar
     
@@ -115,6 +157,9 @@ def crawl(paginas, profundidade):       # adicionado aula 9
                 continue
 
             sopa = BeautifulSoup(dados_pagina.data, "html.parser")      #parser do linux, diferente do professor
+            
+            indexador(pagina, sopa)     # INCLUIDO NA AULA 21
+            
             links = sopa.find_all('a')
 
             contador = 1        # Variável criada para contar qtos links são válidos (q tem href) # deveria ser = 0? aguardando resp. prof.
@@ -159,7 +204,7 @@ def crawl(paginas, profundidade):       # adicionado aula 9
 
 listapaginas = ["https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o"]
 
-#crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
+crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
                             # NOTA: prof.falou que profundidade = 2 nos testes dele levou 10h pra processar os dados!
 
 #teste = separaPalavras('Este lugar é apavorante')
