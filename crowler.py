@@ -1,6 +1,6 @@
 import urllib3
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin        #para corrigir links que não tem https
+from urllib.parse import urljoin
 import re
 import nltk
 import pymysql
@@ -16,11 +16,8 @@ def inserePalavraLocalizacao(idurl, idpalavra, localizacao):
 
     return idpalavra_localizacao
 
-#t5 = inserePalavraLocalizacao(1, 2, 50)
-#print("teste func. inserePalavraLocalizacao = ", t5)
-
-def inserePalavra(palavra):     # aula 19
-    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True, use_unicode = True, charset = 'utf8mb4')  #Aula 22: use_unicode e charset (tratamento texto, pq pag web tem varios tipos carecteres)
+def inserePalavra(palavra):
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True, use_unicode = True, charset = 'utf8mb4')
     cursor = conexao.cursor()
     cursor.execute('insert into palavras (palavra) values (%s)', palavra)
     idpalavra = cursor.lastrowid
@@ -30,69 +27,56 @@ def inserePalavra(palavra):     # aula 19
 
     return idpalavra
 
-#t4 = inserePalavra('teste2')
-#print("Teste função inserePalavra = ", t4)
-
-def palavraIndexada(palavra):       # aula 18
-    retorno = -1    # caso não exista a palavra no índice
-    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', use_unicode = True, charset = 'utf8mb4')    #Aula 22: use_unicode e charset (tratamento texto, pq pag web tem varios tipos carecteres) 
+def palavraIndexada(palavra):
+    retorno = -1
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', use_unicode = True, charset = 'utf8mb4')
     cursor = conexao.cursor()
     cursor.execute('select idpalavra from palavras where palavra = %s', palavra)
-    if cursor.rowcount > 0:
-        #print("Palavra já cadastrada")
-        retorno = cursor.fetchone()[0]      # retorna o id da palavra
-    #else:
-        #print("Palavra não cadastrada")
+    if cursor.rowcount > 0:        
+        retorno = cursor.fetchone()[0] 
+    else:
+        print("Palavra não cadastrada")
 
     cursor.close()
     conexao.close()
     return retorno
 
-#t3 = palavraIndexada("Linguage")
-#print("Teste função palavraIndexada = ", t3)
-
-def inserePagina(url):      #aula 17
-    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True)   # se não colocar autocommit=True ele não guarda/registra nova url
+def inserePagina(url):
+    conexao = pymysql.connect(host = 'localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice', autocommit= True)
     cursor = conexao.cursor()
     cursor.execute('insert into urls (url) values (%s)', url)
-    idpagina = cursor.lastrowid     # Pega o id que acabou de ser inserido na base de dados / Usar lastrowid só quando tem só 1 pessoa usando banco dados, em rede local.
+    idpagina = cursor.lastrowid
     cursor.close()
     conexao.close()
     return idpagina
 
-#t2 = inserePagina('teste2')
-#print('teste função inserePagina = ', t2)
 
-def paginaIndexada(url):                # Adicionado aula 16, Verifica se já existe a url
-    retorno = -1                        # caso não exista a página
+def paginaIndexada(url):
+    retorno = -1
     conexao = pymysql.connect(host='localhost', user = 'root', passwd= 'C0br@$t@r', db= 'indice')
-    cursorUrl = conexao.cursor()        # permite comandos do sql aqui dentro
+    cursorUrl = conexao.cursor()
     cursorUrl.execute('select idurl from urls where url = %s', url)
     
     if cursorUrl.rowcount > 0:
-        #print("Url cadastrada")
-        idurl = cursorUrl.fetchone()[0]     #buscar udurl | fetchone pega 1 registro | [0] posição q vou pegar (=id)
+        idurl = cursorUrl.fetchone()[0]
         cursorPalavra = conexao.cursor()
         cursorPalavra.execute('select idurl from palavra_localizacao where idurl = %s', idurl)
 
         if cursorPalavra.rowcount > 0:
-            #print("Url com palavras")
-            retorno = -2                    # caso exista a página com palavras cadastradas
+            retorno = -2
         else:
             print("Url sem palavras")
-            retorno = idurl                 # caso exista a página sem palavras, então retorna o ID da página
+            retorno = idurl
         cursorPalavra.close()
-    #else:
-        #print("Url não cadastrada")
+    else:
+        print("Url não cadastrada")
 
     cursorUrl.close()
     conexao.close()
     return retorno
     
-#t = paginaIndexada('teste')
-#print("t = ", t)
 
-def separaPalavras(texto):              # adicionado aula 15
+def separaPalavras(texto):
     stop = nltk.corpus.stopwords.words('portuguese')
     stemmer = nltk.stem.RSLPStemmer()
     splitter = re.compile('\\W+')
@@ -133,67 +117,53 @@ def indexador(url, sopa):
         if idpalavra == -1:
             idpalavra = inserePalavra(palavra)
 
-        inserePalavraLocalizacao(idnova_pagina, idpalavra, i)   # i = posição da palavra no documento/pagina
+        inserePalavraLocalizacao(idnova_pagina, idpalavra, i)
 
 
 
 
-def crawl(paginas, profundidade):       # adicionado aula 9
-    #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)    #desabilitar
+def crawl(paginas, profundidade):
     
     for i in range(profundidade):
 
-        novas_paginas = set()       # set() é um conjunto q nao permite elementos repetidos
+        novas_paginas = set()
 
-        for pagina in paginas:      # for adicionado para usar função em uma lista de paginas
+        for pagina in paginas:
 
             http = urllib3.PoolManager()
             
-            #Tratamento de erro, caso o link não abr
             try:                                
                 dados_pagina = http.request('GET', pagina)
             except:
                 print('Erro ao abrir a página ' + pagina)
                 continue
 
-            sopa = BeautifulSoup(dados_pagina.data, "html.parser")      #parser do linux, diferente do professor
-            
-            indexador(pagina, sopa)     # INCLUIDO NA AULA 21
+            sopa = BeautifulSoup(dados_pagina.data, "html.parser")      
+
+            indexador(pagina, sopa)
             
             links = sopa.find_all('a')
 
-            contador = 1        # Variável criada para contar qtos links são válidos (q tem href) # deveria ser = 0? aguardando resp. prof.
+            contador = 1
 
             for link in links:
-                #print(str(link.contents) + " - " + str(link.get('href')))
-                #print(link.attrs)       #imprime todos os atributos do link
-                #print("\n")
 
                 if('href' in link.attrs):
 
-                    url = urljoin(pagina,str(link.get('href')))     #para corrigir links que não tem https
+                    url = urljoin(pagina,str(link.get('href')))
 
-                    #if url != link.get('href'):                    # if feito só para mostrar a correção dos links
-                        #print("Link corrigido = ", url)
-                        #print("Link original sem correção = ",link.get('href'))
+                    if url.find("'") != -1:
+                        continue
 
-                    if url.find("'") != -1:     # diferente de -1 sig. que encontrou uma url / ("'") = url vazio
-                        continue                # não executa mais nada pra baixo e passa para próxima url
+                    url = url.split('#')[0]
 
-                    #print("Url original = ",url)
-                    url = url.split('#')[0]     # vai quebrar url quando achar o # e desprezar o que vem depois #  / [0] = 1 posição
-                    #print("Url quebrada no # :", url)
-                    #print("\n")
-
-                    if url[0:4] == 'http':      #verificação adicional para add paginas
+                    if url[0:4] == 'http':
                         novas_paginas.add(url)
                                 
                     contador = contador + 1
 
             paginas = novas_paginas
 
-            #print("contador de páginas = ",contador)
-            #print("O numero de links dentro da página é: ",len(links))
         print("nº paginas = ", len(paginas))
         print("nº novas_paginas = ", len(novas_paginas))
 
@@ -204,11 +174,4 @@ def crawl(paginas, profundidade):       # adicionado aula 9
 
 listapaginas = ["https://pt.wikipedia.org/wiki/Linguagem_de_programa%C3%A7%C3%A3o"]
 
-crawl(listapaginas,1)      # 2 = profundidade, busca os links dentro de cada link (396) que estava no link origem (1º)
-                            # NOTA: prof.falou que profundidade = 2 nos testes dele levou 10h pra processar os dados!
-
-#teste = separaPalavras('Este lugar é apavorante')
-#print("teste = ",teste)
-
-
-
+crawl(listapaginas,1)
